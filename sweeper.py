@@ -3,7 +3,9 @@ from random import randint
 
 class Square:
     def __init__(self, xcoor, ycoor):
-        self.status = randint(10, 11)
+        self.is_bomb = 0
+        self.is_open = 0
+        self.nearby_bombs = 0
         self.xcoor = xcoor
         self.ycoor = ycoor
     
@@ -18,7 +20,7 @@ class Square:
         return hashvalue
 
     def __str__(self):
-        return 'Square at ({}, {}) status {}'.format(self.xcoor, self.ycoor, self.status)
+        return 'Square at ({}, {}) bomb: {}'.format(self.xcoor, self.ycoor, self.is_bomb)
 
     def __repr__(self):
         return 'Square({}, {})'.format(self.xcoor, self.ycoor)
@@ -37,8 +39,18 @@ class Grid:
             for i in range(0, self.gridx):
                 self.squares.add(Square(i,j))
 
-    def set_states(self):
-        pass
+        mines = []
+        for i in range (0, 99):
+            while True:
+                minex = randint(0,23)
+                miney = randint(0,23)
+                if (minex, miney) not in mines:
+                    mines.append((minex, miney))
+                    break
+        for i in mines:
+            for j in self.squares:
+                if i[0] == j.xcoor and i[1] == j.ycoor:
+                    j.is_bomb = 1
 
 #Game loop
 
@@ -50,7 +62,6 @@ clock = pygame.time.Clock()
 tickrate = 20
 
 grid = Grid()
-grid.set_states()
 width = grid.gridx*40 + (grid.gridx - 1)*4
 heigth = grid.gridy*40 + (grid.gridy - 1)*4
 screen = pygame.display.set_mode((width, heigth))
@@ -70,16 +81,11 @@ while not done:
         pygame.draw.rect(screen, [0,0,0], pygame.Rect(0, 40 * i + 4 * i, grid.gridx*40 + (grid.gridx -1)*4, 4))
 
     for i in grid.squares:
-        if i.status == 11:
+        if i.is_bomb == 1:
             pygame.draw.circle(screen, (255,0,0), (i.xcoor*40 + 23 + i.xcoor*4, i.ycoor*40 + 23 + i.ycoor*4), 15)
     
     pygame.display.update()
     pygame.display.flip()
     clock.tick(tickrate)
-
-if pygame.image.get_extended:
-    print("True")
-else:
-    print("Oh no")
 
 pygame.quit()
