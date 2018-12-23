@@ -4,7 +4,7 @@ from random import randint
 class Square:
     def __init__(self, xcoor, ycoor):
         self.is_bomb = 0
-        self.is_open = 0
+        self.is_open = False
         self.nearby_bombs = 0
         self.xcoor = xcoor
         self.ycoor = ycoor
@@ -67,6 +67,28 @@ class Grid:
                         neighbouring_bombs += 1
                 i.nearby_bombs = neighbouring_bombs
 
+class Selectionner:
+    def __init__(self, xcoor, ycoor):
+        self.xcoor = xcoor
+        self.ycoor = ycoor
+        self.trigger = False
+    
+    def move_selection(self, direction):
+        if direction == 'up':
+            self.ycoor -= 1
+        elif direction == 'right':
+            self.xcoor += 1
+        elif direction == 'down':
+            self.ycoor += 1
+        elif direction == 'left':
+            self.xcoor -= 1
+
+    def draw_selection(self, colour):
+        pygame.draw.rect(screen, colour, pygame.Rect(self.xcoor*40 + self.xcoor*4, self.ycoor*40 + self.ycoor*4, 48, 4))
+        pygame.draw.rect(screen, colour, pygame.Rect(self.xcoor*40 + self.xcoor*4, self.ycoor*40 + self.ycoor*4 + 44, 48, 4))
+        pygame.draw.rect(screen, colour, pygame.Rect(self.xcoor*40 + self.xcoor*4, self.ycoor*40 + self.ycoor*4, 4, 48))
+        pygame.draw.rect(screen, colour, pygame.Rect(self.xcoor*40 + self.xcoor*4 + 44, self.ycoor*40 + self.ycoor*4, 4, 48))
+
 
 
 #Game loop
@@ -82,13 +104,35 @@ grid = Grid()
 width = grid.gridx*40 + (grid.gridx - 1)*4
 heigth = grid.gridy*40 + (grid.gridy - 1)*4
 screen = pygame.display.set_mode((width, heigth))
-
+player = Selectionner(2,2)
 done = False
+held_down = False
 
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+
+    pressed = pygame.key.get_pressed()
+    if pressed[pygame.K_SPACE]:
+        print("Triggered!!!")
+        player.trigger = True
+    elif pressed[pygame.K_UP] and held_down != True:
+        player.move_selection('up')
+        held_down = True
+    elif pressed[pygame.K_DOWN] and held_down != True:
+        player.move_selection('down')
+        held_down = True
+    elif pressed[pygame.K_LEFT] and held_down != True:
+        player.move_selection('left')
+        held_down = True
+    elif pressed[pygame.K_RIGHT] and held_down != True:
+        player.move_selection('right')
+        held_down = True
+    elif not (pressed[pygame.K_UP] or pressed[pygame.K_DOWN] or pressed[pygame.K_LEFT] or pressed[pygame.K_RIGHT]):
+        held_down = False
+
+
 
     screen.fill([200, 200, 200])
     for i in range(0, grid.gridx):
@@ -97,14 +141,28 @@ while not done:
         pygame.draw.rect(screen, [0,0,0], pygame.Rect(0, 40 * i + 4 * i, grid.gridx*40 + (grid.gridx -1)*4, 4))
 
     for i in grid.squares:
-        if i.is_bomb == 1:
-            pygame.draw.circle(screen, (255,0,0), (i.xcoor*40 + 23 + i.xcoor*4, i.ycoor*40 + 23 + i.ycoor*4), 15)
-        elif i.nearby_bombs == 1:
-            pygame.draw.circle(screen, (0,0,200), (i.xcoor*40 + 23 + i.xcoor*4, i.ycoor*40 + 23 + i.ycoor*4), 15)
+        if player.trigger:
+            print("HELLO")
+            if i.xcoor == player.xcoor and i.ycoor == player.ycoor:
+                i.is_open = True
+        if i.is_open:
+            if i.is_bomb == 1:
+                image = pygame.image.load_basic('mine.bmp')
+                screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
+            elif i.nearby_bombs == 0:
+                None
+            else:
+                image = pygame.image.load_basic('number{}.bmp'.format(i.nearby_bombs))
+                screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
+    
+    player.draw_selection((255, 255, 0))
+            
+
 
     
     pygame.display.update()
     pygame.display.flip()
+    player.trigger = False
     clock.tick(tickrate)
 
 pygame.quit()
