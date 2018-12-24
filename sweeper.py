@@ -4,6 +4,7 @@ from random import randint
 class Square:
     def __init__(self, xcoor, ycoor):
         self.is_bomb = 0
+        self.is_flagged = False
         self.is_open = False
         self.nearby_bombs = 0
         self.xcoor = xcoor
@@ -72,6 +73,7 @@ class Selectionner:
         self.xcoor = xcoor
         self.ycoor = ycoor
         self.trigger = False
+        self.flag_trigger = False
     
     def move_selection(self, direction):
         if direction == 'up':
@@ -115,8 +117,10 @@ while not done:
 
     pressed = pygame.key.get_pressed()
     if pressed[pygame.K_SPACE]:
-        print("Triggered!!!")
         player.trigger = True
+    elif pressed[pygame.K_f] and held_down != True:
+        player.flag_trigger = True
+        held_down = True
     elif pressed[pygame.K_UP] and held_down != True:
         player.move_selection('up')
         held_down = True
@@ -129,10 +133,8 @@ while not done:
     elif pressed[pygame.K_RIGHT] and held_down != True:
         player.move_selection('right')
         held_down = True
-    elif not (pressed[pygame.K_UP] or pressed[pygame.K_DOWN] or pressed[pygame.K_LEFT] or pressed[pygame.K_RIGHT]):
+    elif not (pressed[pygame.K_UP] or pressed[pygame.K_DOWN] or pressed[pygame.K_LEFT] or pressed[pygame.K_RIGHT] or pressed[pygame.K_f]):
         held_down = False
-
-
 
     screen.fill([200, 200, 200])
     for i in range(0, grid.gridx):
@@ -140,22 +142,30 @@ while not done:
     for i in range(0, grid.gridy):
         pygame.draw.rect(screen, [0,0,0], pygame.Rect(0, 40 * i + 4 * i, grid.gridx*40 + (grid.gridx -1)*4, 4))
 
+    player.draw_selection((255, 255, 0))
+
     for i in grid.squares:
         if player.trigger:
-            print("HELLO")
-            if i.xcoor == player.xcoor and i.ycoor == player.ycoor:
+            if (i.xcoor == player.xcoor and i.ycoor == player.ycoor) and not i.is_flagged:
                 i.is_open = True
+        if player.flag_trigger:
+            if (i.xcoor == player.xcoor and i.ycoor == player.ycoor) and not i.is_flagged:
+                i.is_flagged = True
+            elif (i.xcoor == player.xcoor and i.ycoor == player.ycoor) and i.is_flagged:
+                i.is_flagged = False
+        if i.is_flagged:
+            image = pygame.image.load_basic('flag.bmp')
+            screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
         if i.is_open:
             if i.is_bomb == 1:
                 image = pygame.image.load_basic('mine.bmp')
                 screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
-            elif i.nearby_bombs == 0:
-                None
             else:
                 image = pygame.image.load_basic('number{}.bmp'.format(i.nearby_bombs))
                 screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
-    
-    player.draw_selection((255, 255, 0))
+
+        if i.is_bomb and i.is_open:
+            done = True
             
 
 
@@ -163,6 +173,7 @@ while not done:
     pygame.display.update()
     pygame.display.flip()
     player.trigger = False
+    player.flag_trigger = False
     clock.tick(tickrate)
 
 pygame.quit()
