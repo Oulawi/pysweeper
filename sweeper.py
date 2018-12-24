@@ -164,8 +164,25 @@ while not done:
                 image = pygame.image.load_basic('number{}.bmp'.format(i.nearby_bombs))
                 screen.blit(image, (40*i.xcoor + 4*(i.xcoor + 1), 40*i.ycoor + 4*(i.ycoor + 1)))
 
+        if i.nearby_bombs == 0 and i.is_open:
+            neighbours = grid.squares.intersection(i.neighbours())
+            for s in grid.squares:
+                if s in neighbours:
+                    s.is_open = True
+
+        correct_flags = 0
+        if i.is_bomb and i.is_flagged:
+            correct_flags += 1
+        open_squares = 0
+        if i.is_open:
+            open_squares += 1
+        if correct_flags == 99 and open_squares == 477:
+            done = True
+            print("You win")
+
         if i.is_bomb and i.is_open:
             done = True
+            print("You lose")
             
 
 
